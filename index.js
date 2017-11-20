@@ -6,7 +6,6 @@ var quantityToSell = process.env['QUANTITY_TO_SELL'] || 48.27149519;
 console.log('Target Price', process.env['TARGET_LSK_USD_PRICE']);
 console.log('Quantity to sell', process.env['QUANTITY_TO_SELL']);
 console.log('Key', process.env['API_KEY']);
-console.log('Secret', process.env['API_SECRET']);
 
 bittrex.options({
   'apikey': process.env['API_KEY'] || '',
