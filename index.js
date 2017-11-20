@@ -16,40 +16,44 @@ bittrex.options({
 function sellIfTargetReached() {
   bittrex.getticker( { market : 'BTC-LSK' }, function(lskBtcData, err ) {
 
-    var lskBtcPrice = lskBtcData.result.Last;
+    if(lskBtcData) {
+      var lskBtcPrice = lskBtcData.result.Last;
 
-    bittrex.getticker( { market : 'USDT-BTC' }, function(btcUsdData, err ) {
+      bittrex.getticker({market: 'USDT-BTC'}, function (btcUsdData, err) {
 
-      var btcUsdtPrice = btcUsdData.result.Last;
+        if(btcUsdData) {
+          var btcUsdtPrice = btcUsdData.result.Last;
 
-      lskUsdPrice = parseFloat(lskBtcPrice * btcUsdtPrice);
+          lskUsdPrice = parseFloat(lskBtcPrice * btcUsdtPrice);
 
-      console.log(new Date() + ': Current LSK price on Bittrex: ', lskUsdPrice);
+          console.log(new Date() + ': Current LSK price on Bittrex: ', lskUsdPrice);
 
-      if(lskUsdPrice >= targetLskUsdPrice) {
-        bittrex.tradesell({
-          MarketName: 'BTC-LSK',
-          OrderType: 'LIMIT',
-          Quantity: quantityToSell,
-          Rate: lskBtcPrice,
-          TimeInEffect: 'GOOD_TIL_CANCELLED',
-          ConditionType: 'NONE',
-          Target: 0
-        }, function( data, err ) {
+          if (lskUsdPrice >= targetLskUsdPrice) {
+            bittrex.tradesell({
+                MarketName: 'BTC-LSK',
+                OrderType: 'LIMIT',
+                Quantity: quantityToSell,
+                Rate: lskBtcPrice,
+                TimeInEffect: 'GOOD_TIL_CANCELLED',
+                ConditionType: 'NONE',
+                Target: 0
+              }, function (data, err) {
 
-            if(err) {
-              console.log('Trigger reached, but error occured whilst creating order:', err);
-            } else {
-              console.log('Trigger reached and trade created:', data);
-            }
+                if (err) {
+                  console.log('Trigger reached, but error occured whilst creating order:', err);
+                } else {
+                  console.log('Trigger reached and trade created:', data);
+                }
 
-            console.log('Terminating program');
+                console.log('Terminating program');
+              }
+            );
+
+            process.exit();
           }
-        );
-
-        process.exit();
-      }
-    });
+        }
+      });
+    }
   });
 }
 
