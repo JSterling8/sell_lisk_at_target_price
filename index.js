@@ -1,6 +1,6 @@
 const bittrex = require('node-bittrex-api');
 
-const targetLskUsdPrice = process.env['TARGET_LSK_USD_PRICE'];
+const targetLskUsdtPrice = process.env['TARGET_LSK_USD_PRICE'];
 const quantityToSell = process.env['QUANTITY_TO_SELL'];
 const howOftenToCheckInSecs = 10;
 const howOftenToCheckInMs = howOftenToCheckInSecs * 1000;
@@ -28,11 +28,11 @@ async function main() {
     return;
   }
 
-  const lskUsdPrice = parseFloat(lskBtcPrice * btcUsdtPrice);
+  const lskUsdtPrice = lskBtcPrice * btcUsdtPrice;
 
-  console.log(new Date() + ': Current LSK price on Bittrex: ', lskUsdPrice);
+  console.log(new Date() + ': Current LSK price on Bittrex in USDT: ', lskUsdtPrice);
 
-  if (lskUsdPrice >= targetLskUsdPrice) {
+  if (lskUsdtPrice >= targetLskUsdtPrice) {
     await tradesell();
 
     console.log('Terminating program');
