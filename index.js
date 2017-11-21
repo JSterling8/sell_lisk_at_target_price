@@ -1,12 +1,12 @@
 const bittrex = require('node-bittrex-api');
 
-const targetLskUsdtPrice = process.env['TARGET_LSK_USD_PRICE'];
+const targetLskUsdtPrice = process.env['TARGET_LSK_USDT_PRICE'];
 const quantityToSell = process.env['QUANTITY_TO_SELL'];
 const howOftenToCheckInSecs = 10;
 const howOftenToCheckInMs = howOftenToCheckInSecs * 1000;
 
-console.log('Target Price', process.env['TARGET_LSK_USD_PRICE']);
-console.log('Quantity to sell', process.env['QUANTITY_TO_SELL']);
+console.log('Target Price', targetLskUsdtPrice);
+console.log('Quantity to sell', quantityToSell);
 console.log('Key', process.env['API_KEY']);
 console.log('Checking every ', howOftenToCheckInSecs + ' seconds.');
 
