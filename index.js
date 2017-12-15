@@ -11,6 +11,7 @@ let spreadPercent = process.env['SPREAD_PERCENT'];
 
 console.log('Buy or Sell:', buyOrSell);
 console.log('Target LSK USDT Price:', targetLskUsdtPrice);
+console.log('Spread:' + spreadPercent + '%');
 console.log('Key', process.env['API_KEY']);
 console.log('Checking every ', howOftenToCheckInSecs + ' seconds.');
 
@@ -25,8 +26,8 @@ async function main() {
 
   if(!awaitingOrderToBeTaken) {
 
-    const lskBtcPrice = await getSpotPriceForMarket('BTC-LSK');
-    const btcUsdtPrice = await getSpotPriceForMarket('USDT-BTC');
+    const lskBtcPrice = await getPriceForMarket('BTC-LSK');
+    const btcUsdtPrice = await getPriceForMarket('USDT-BTC');
 
     if (lskBtcPrice === -1 || btcUsdtPrice === -1) {
       console.log('Failed to get price(s). Will try again in ' + howOftenToCheckInSecs + ' seconds.');
@@ -71,8 +72,8 @@ async function main() {
 }
 
 async function getLiskUsdtPrice() {
-  const lskBtcPrice = await getSpotPriceForMarket('BTC-LSK');
-  const btcUsdtPrice = await getSpotPriceForMarket('USDT-BTC');
+  const lskBtcPrice = await getPriceForMarket('BTC-LSK');
+  const btcUsdtPrice = await getPriceForMarket('USDT-BTC');
 
   if (lskBtcPrice === -1 || btcUsdtPrice === -1) {
     return -1;
@@ -81,14 +82,19 @@ async function getLiskUsdtPrice() {
   return lskBtcPrice * btcUsdtPrice;
 }
 
-async function getSpotPriceForMarket(market) {
+async function getPriceForMarket(market) {
 
   return new Promise(function(resolve) {
     bittrex.getticker({ market }, function (rate) {
       if(rate) {
         const ask = parseFloat(rate.result.Ask);
         const bid = parseFloat(rate.result.Bid);
-        return resolve((bid + ask) / 2);
+
+        if(market === 'USDT-BTC') {
+          return resolve((bid + ask) / 2);
+        } else {
+          return buyOrSell === 'buy' ? resolve(ask) : resolve(bid);
+        }
       } else {
         return resolve(-1);
       }
