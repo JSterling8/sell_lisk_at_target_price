@@ -33,7 +33,9 @@ async function main() {
   console.log(new Date() + ': Current LSK price on Bittrex in USDT: ', lskUsdtPrice);
 
   if (lskUsdtPrice >= targetLskUsdtPrice) {
-    await tradesell();
+    console.log("Triggered sell. Attempting...");
+
+    await tradesell(lskBtcPrice);
 
     console.log('Terminating program');
 
@@ -54,14 +56,14 @@ async function getLastPriceForMarket(market) {
   })
 }
 
-async function tradesell() {
+async function tradesell(rate) {
 
   return new Promise(function(resolve) {
     bittrex.tradesell({
         MarketName: 'BTC-LSK',
         OrderType: 'LIMIT',
         Quantity: quantityToSell,
-        Rate: lskBtcPrice,
+        Rate: rate,
         TimeInEffect: 'GOOD_TIL_CANCELLED',
         ConditionType: 'NONE',
         Target: 0
