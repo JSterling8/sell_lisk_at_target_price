@@ -132,13 +132,14 @@ async function tradesell(rate) {
 async function tradebuy(rate) {
 
   const btcBalance = await getBalance('BTC');
-  const quantityToTrade = (btcBalance / rate) - 1;
-
-  console.log('btcBalance', btcBalance);
-  console.log('rate', rate);
-  console.log('quantity to trade', quantityToTrade);
+  const quantityToTrade = (btcBalance / rate) - 0.5;
 
   return new Promise(function(resolve, reject) {
+
+    if(quantityToTrade < 0) {
+      reject("Not enough balance to trade");
+    }
+
     bittrex.buylimit({
         market: 'BTC-LSK',
         quantity: quantityToTrade,
