@@ -3,7 +3,9 @@ const bittrex = require('node-bittrex-api');
 
 const howOftenToCheckInSecs = 10;
 const howOftenToCheckInMs = howOftenToCheckInSecs * 1000;
+// TODO. Set automatically based on balance and current price (if no LSK, buy at 1% less than current price)
 let targetLskUsdtPrice = process.env['TARGET_LSK_USDT_PRICE'];
+// TODO. Set automatically based on balance and current price (if no LSK, buy at 1% less than current price)
 let buyOrSell = process.env['BUY_OR_SELL'];
 let spreadPercent = process.env['SPREAD_PERCENT'];
 
@@ -23,11 +25,17 @@ async function main() {
 
   if(!awaitingOrderToBeTaken) {
 
-    const lskUsdtPrice = await getLiskUsdtPrice();
-    if(lskUsdtPrice < 0) {
+    const lskBtcPrice = await getSpotPriceForMarket('BTC-LSK');
+    const btcUsdtPrice = await getSpotPriceForMarket('USDT-BTC');
+
+    if (lskBtcPrice === -1 || btcUsdtPrice === -1) {
       console.log('Failed to get price(s). Will try again in ' + howOftenToCheckInSecs + ' seconds.');
       return;
     }
+
+    const lskUsdtPrice = lskBtcPrice * btcUsdtPrice;
+
+    console.log(new Date() + ': Current LSK price on Bittrex in USDT: ', lskUsdtPrice);
 
     if (buyOrSell === 'buy' && lskUsdtPrice <= targetLskUsdtPrice) {
       console.log("Triggered buy. Attempting...");
@@ -38,10 +46,10 @@ async function main() {
           awaitingOrderToBeTaken = false;
         }, 30000);
         buyOrSell = 'sell';
-        targetLskUsdtPrice = lskUsdtPrice * (spreadPercent / 100);
+        targetLskUsdtPrice = lskUsdtPrice * (1 + (spreadPercent / 100));
         console.log("Now awaiting sell. USDT sell target is: " + targetLskUsdtPrice);
       } catch (err) {
-        console.log("Buy failed. Will retry in 10 seconds if price is still good...");
+        console.log("Buy failed. Will retry in 10 seconds if price is still good...", err);
       }
     } else if(buyOrSell === 'sell' && lskUsdtPrice >= targetLskUsdtPrice) {
       console.log("Triggered sell. Attempting...");
@@ -56,7 +64,7 @@ async function main() {
         targetLskUsdtPrice = lskUsdtPrice * (100 / (100 * (1 + (spreadPercent / 100))));
         console.log("Now awaiting buy. USDT buy target is: " + targetLskUsdtPrice);
       } catch (err) {
-        console.log("Sell failed. Will retry in 10 seconds if price is still good...");
+        console.log("Sell failed. Will retry in 10 seconds if price is still good...", err);
       }
     }
   }
@@ -69,8 +77,6 @@ async function getLiskUsdtPrice() {
   if (lskBtcPrice === -1 || btcUsdtPrice === -1) {
     return -1;
   }
-
-  console.log(new Date() + ': Current LSK price on Bittrex in USDT: ', lskBtcPrice * btcUsdtPrice);
 
   return lskBtcPrice * btcUsdtPrice;
 }
