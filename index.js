@@ -1,3 +1,4 @@
+require('dotenv').config();
 const bittrex = require('node-bittrex-api');
 
 const howOftenToCheckInSecs = 10;
