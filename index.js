@@ -1,12 +1,12 @@
 const bittrex = require('node-bittrex-api');
 
-const targetLskUsdtPrice = process.env['TARGET_LSK_USDT_PRICE'];
-const quantityToSell = process.env['QUANTITY_TO_SELL'];
 const howOftenToCheckInSecs = 10;
 const howOftenToCheckInMs = howOftenToCheckInSecs * 1000;
+let targetLskUsdtPrice = process.env['TARGET_LSK_USDT_PRICE'];
+let buyOrSell = process.env['BUY_OR_SELL'];
 
-console.log('Target Price', targetLskUsdtPrice);
-console.log('Quantity to sell', quantityToSell);
+console.log('Buy or Sell:', buyOrSell);
+console.log('Target LSK USDT Price:', targetLskUsdtPrice);
 console.log('Key', process.env['API_KEY']);
 console.log('Checking every ', howOftenToCheckInSecs + ' seconds.');
 
@@ -32,14 +32,16 @@ async function main() {
 
   console.log(new Date() + ': Current LSK price on Bittrex in USDT: ', lskUsdtPrice);
 
-  if (lskUsdtPrice >= targetLskUsdtPrice) {
-    console.log("Triggered sell. Attempting...");
-
+  if (buyOrSell === 'buy' && lskUsdtPrice <= targetLskUsdtPrice) {
+    console.log("Triggered buy. Attempting...");
     await tradesell(lskBtcPrice);
-
-    console.log('Terminating program');
-
-    process.exit();
+    buyOrSell = 'buy';
+    targetLskUsdtPrice = lskUsdtPrice * 0.909090909;
+  } else if(buyOrSell === 'sell' && lskUsdtPrice >= targetLskUsdtPrice) {
+    console.log("Triggered sell. Attempting...");
+    await tradebuy(lskBtcPrice);
+    buyOrSell = 'sell';
+    targetLskUsdtPrice = lskUsdtPrice * 1.1;
   }
 }
 
@@ -56,13 +58,32 @@ async function getLastPriceForMarket(market) {
   })
 }
 
+async function getBalance(currency) {
+
+  return new Promise(function(resolve, reject) {
+    bittrex.getbalance({
+        currency
+    }, function(data, err) {
+      if (err) {
+        console.log('Error occurred whilst getting balance:', err);
+        return reject();
+      } else {
+        console.log(`Available ${currency} balance is ${data.result.Available}.`);
+        return resolve(data.result.Available);
+      }
+    })
+  })
+}
+
 async function tradesell(rate) {
+
+  const quantityToTrade = await getBalance('LSK');
 
   return new Promise(function(resolve) {
     bittrex.tradesell({
         MarketName: 'BTC-LSK',
         OrderType: 'LIMIT',
-        Quantity: quantityToSell,
+        Quantity: quantityToTrade,
         Rate: rate,
         TimeInEffect: 'GOOD_TIL_CANCELLED',
         ConditionType: 'NONE',
@@ -70,9 +91,36 @@ async function tradesell(rate) {
       }, function (data, err) {
 
         if (err) {
-          console.log('Trigger reached, but error occured whilst creating order:', err);
+          console.log('Trigger reached, but error occurred whilst creating sell order:', err);
         } else {
-          console.log('Trigger reached and trade created:', data);
+          console.log('Trigger reached and sell trade created:', data);
+        }
+
+        resolve();
+      }
+    );
+  })
+}
+
+async function tradebuy(rate) {
+
+  const btcBalance = await getBalance('BTC');
+  const quantityToTrade = (btcBalance / rate) - 0.01;
+
+  return new Promise(function(resolve) {
+    bittrex.tradebuy({
+        MarketName: 'BTC-LSK',
+        OrderType: 'LIMIT',
+        Quantity: quantityToTrade,
+        Rate: rate,
+        TimeInEffect: 'GOOD_TIL_CANCELLED',
+        ConditionType: 'NONE',
+        Target: 0
+      }, function (data, err) {
+        if (err) {
+          console.log('Trigger reached, but error occured whilst buy creating order:', err);
+        } else {
+          console.log('Trigger reached and buy trade created:', data);
         }
 
         resolve();
